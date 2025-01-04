@@ -6,7 +6,7 @@ from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
 from database import init_db, get_db
-from models import WikiEntry
+from models import WikiEntry, WikiEntryLog
 
 app = typer.Typer()
 
