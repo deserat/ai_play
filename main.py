@@ -1,12 +1,14 @@
 from typing import Union, List
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from . import models
-from .database import get_db
-from .config import Settings
 from pydantic import BaseModel
 
+from .config import Settings
+from . import models
+from .database import get_db
+
 settings = Settings()
+
 
 class WikiEntryResponse(BaseModel):
     id: int
@@ -17,6 +19,7 @@ class WikiEntryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 app = FastAPI()
 
@@ -30,10 +33,13 @@ def read_root():
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
+
 @app.get("/wiki-entries/", response_model=List[WikiEntryResponse])
 def list_wiki_entries(db: Session = Depends(get_db)):
     """
     Get all Wikipedia entries stored in the database.
     """
-    entries = db.query(models.WikiEntry).order_by(models.WikiEntry.created_at.desc()).all()
+    entries = (
+        db.query(models.WikiEntry).order_by(models.WikiEntry.created_at.desc()).all()
+    )
     return entries
