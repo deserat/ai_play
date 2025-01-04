@@ -25,17 +25,32 @@ def get_wiki(title: str):
         title: The title of the Wikipedia article to fetch
     """
     try:
-        # Run the async function in the event loop
-        content = asyncio.run(get_wikipedia_entry(title))
+        db = next(get_db())
+        
+        # First check if article exists in database
+        cached_entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
+        if cached_entry:
+            content = cached_entry.content
+            rprint("[yellow]Retrieved from database cache.[/yellow]")
+        else:
+            # Fetch from Wikipedia API if not in database
+            content = asyncio.run(get_wikipedia_entry(title))
+            
+            # Store in database
+            wiki_entry = WikiEntry(title=title, content=content)
+            db.add(wiki_entry)
+            db.commit()
+            rprint("[green]Article successfully stored in database.[/green]")
 
         # Format and display the content
         text = Text(content, justify="left")
         panel = Panel(text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
         rprint(panel)
-        rprint("[green]Article successfully stored in database.[/green]")
 
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
+    finally:
+        db.close()
 
 
 def init():
