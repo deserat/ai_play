@@ -3,7 +3,40 @@ import asyncio
 import re
 from datetime import datetime, timedelta
 from config import Settings
-from models import WikiEntry
+from models import WikiEntry, WikiEntryLog
+
+
+def log_wiki_action(
+    db,
+    title: str,
+    wiki_entry_id: int | None,
+    action_type: str,
+    cache_hit: bool,
+    needed_update: bool,
+    was_updated: bool
+) -> None:
+    """
+    Log an action performed on a wiki entry.
+    
+    Args:
+        db: Database session
+        title: Title of the article
+        wiki_entry_id: ID of the WikiEntry (can be None for new entries)
+        action_type: Type of action performed ('check', 'update', 'create')
+        cache_hit: Whether the content was served from cache
+        needed_update: Whether the entry needed updating
+        was_updated: Whether the entry was actually updated
+    """
+    log_entry = WikiEntryLog(
+        wiki_entry_id=wiki_entry_id,
+        title=title,
+        action_type=action_type,
+        cache_hit=cache_hit,
+        needed_update=needed_update,
+        was_updated=was_updated
+    )
+    db.add(log_entry)
+    db.commit()
 
 
 async def get_wikipedia_entry(title: str) -> str:

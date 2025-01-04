@@ -1,7 +1,7 @@
 import typer
 import asyncio
 from datetime import datetime
-from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry
+from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry, log_wiki_action
 from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
@@ -30,6 +30,15 @@ def get_wiki(title: str):
         if not should_update and entry:
             content = entry.content
             rprint("[yellow]Retrieved from database cache.[/yellow]")
+            log_wiki_action(
+                db=db,
+                title=title,
+                wiki_entry_id=entry.id,
+                action_type='check',
+                cache_hit=True,
+                needed_update=False,
+                was_updated=False
+            )
         else:
             # Fetch from Wikipedia API
             content = asyncio.run(get_wikipedia_entry(title))
@@ -39,11 +48,30 @@ def get_wiki(title: str):
                 entry.content = content
                 entry.created_at = datetime.utcnow()
                 rprint("[green]Article successfully updated in database.[/green]")
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=entry.id,
+                    action_type='update',
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True
+                )
             else:
                 # Create new entry
                 entry = WikiEntry(title=title, content=content)
                 db.add(entry)
+                db.commit()  # Commit to get the entry.id
                 rprint("[green]Article successfully stored in database.[/green]")
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=entry.id,
+                    action_type='create',
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True
+                )
             
             db.commit()
 
@@ -103,15 +131,43 @@ def get_wiki_related(title: str):
         
         if not should_update and main_entry:
             rprint(f"[yellow]Main article '{title}' retrieved from cache.[/yellow]")
+            log_wiki_action(
+                db=db,
+                title=title,
+                wiki_entry_id=main_entry.id,
+                action_type='check',
+                cache_hit=True,
+                needed_update=False,
+                was_updated=False
+            )
         else:
             if main_entry:
                 main_entry.content = result["main_article"]
                 main_entry.created_at = datetime.utcnow()
                 rprint(f"[green]Main article '{title}' updated in database.[/green]")
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=main_entry.id,
+                    action_type='update',
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True
+                )
             else:
                 main_entry = WikiEntry(title=title, content=result["main_article"])
                 db.add(main_entry)
+                db.commit()  # Commit to get the entry.id
                 rprint(f"[green]Main article '{title}' stored in database.[/green]")
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=main_entry.id,
+                    action_type='create',
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True
+                )
             db.commit()
 
         main_text = Text(result["main_article"], justify="left")
@@ -147,6 +203,38 @@ def get_wiki_related(title: str):
             
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
+    finally:
+        db.close()
+
+
+@app.command()
+def view_logs(title: str | None = None, limit: int = 20):
+    """
+    View logs of article actions. Optionally filter by title.
+    """
+    try:
+        db = next(get_db())
+        query = db.query(WikiEntryLog).order_by(WikiEntryLog.action_time.desc())
+        
+        if title:
+            query = query.filter(WikiEntryLog.title == title)
+        
+        logs = query.limit(limit).all()
+        
+        if not logs:
+            rprint("[yellow]No logs found.[/yellow]")
+            return
+
+        rprint("[blue]Article Action Logs:[/blue]")
+        for log in logs:
+            action_time = log.action_time.strftime("%Y-%m-%d %H:%M:%S")
+            cache_status = "Cache Hit" if log.cache_hit else "Cache Miss"
+            update_status = "Updated" if log.was_updated else "No Update"
+            rprint(f"[green]• {log.title}[/green] ({action_time})")
+            rprint(f"  Action: {log.action_type}, {cache_status}, {update_status}")
+
+    except Exception as e:
+        rprint(f"[red]Error viewing logs:[/red] {str(e)}")
     finally:
         db.close()
 
