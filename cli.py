@@ -26,7 +26,7 @@ def get_wiki(title: str):
     """
     try:
         db = next(get_db())
-        
+
         # First check if article exists in database
         cached_entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
         if cached_entry:
@@ -35,7 +35,7 @@ def get_wiki(title: str):
         else:
             # Fetch from Wikipedia API if not in database
             content = asyncio.run(get_wikipedia_entry(title))
-            
+
             # Store in database
             wiki_entry = WikiEntry(title=title, content=content)
             db.add(wiki_entry)
@@ -88,14 +88,14 @@ def get_wiki_related(title: str):
     """
     Fetch a Wikipedia article and all articles listed in its "See Also" section.
     Store all articles in the database.
-    
+
     Args:
         title: The title of the Wikipedia article to fetch
     """
     try:
         db = next(get_db())
         result = asyncio.run(get_related_wikipedia_entries(title))
-        
+
         # Store and display main article
         main_entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
         if not main_entry:
@@ -107,31 +107,48 @@ def get_wiki_related(title: str):
             rprint(f"[yellow]Main article '{title}' already in database.[/yellow]")
 
         main_text = Text(result["main_article"], justify="left")
-        main_panel = Panel(main_text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
+        main_panel = Panel(
+            main_text, title=f"Wikipedia: {title}", width=100, padding=(1, 2)
+        )
         rprint(main_panel)
-        
+
         # Store and display related articles
         if result["related_articles"]:
             rprint("\n[blue]Related Articles:[/blue]")
             for article in result["related_articles"]:
                 # Check if article already exists in database
-                related_entry = db.query(WikiEntry).filter(WikiEntry.title == article['title']).first()
+                related_entry = (
+                    db.query(WikiEntry)
+                    .filter(WikiEntry.title == article["title"])
+                    .first()
+                )
                 if not related_entry:
-                    related_entry = WikiEntry(title=article['title'], content=article['content'])
+                    related_entry = WikiEntry(
+                        title=article["title"], content=article["content"]
+                    )
                     db.add(related_entry)
                     db.commit()
-                    rprint(f"[green]Related article '{article['title']}' stored in database.[/green]")
+                    rprint(
+                        f"[green]Related article '{article['title']}' stored in database.[/green]"
+                    )
                 else:
-                    rprint(f"[yellow]Related article '{article['title']}' already in database.[/yellow]")
+                    rprint(
+                        f"[yellow]Related article '{article['title']}' already in database.[/yellow]"
+                    )
 
                 # Display article preview
                 rprint(f"\n[green]• {article['title']}[/green]")
                 text = Text(article["content"][:500] + "...", justify="left")
-                panel = Panel(text, title=f"Wikipedia: {article['title']}", width=100, padding=(1, 2))
+                panel = Panel(
+                    text,
+                    title=f"Wikipedia: {article['title']}",
+                    width=100,
+                    padding=(1, 2),
+                )
                 rprint(panel)
         else:
             rprint("\n[yellow]No related articles found.[/yellow]")
-            
+
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
     finally:
