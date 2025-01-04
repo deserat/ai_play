@@ -1,8 +1,12 @@
 import typer
 import asyncio
 from datetime import datetime
-from typing import Optional
-from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry, log_wiki_action
+from lib import (
+    get_wikipedia_entry,
+    get_related_wikipedia_entries,
+    should_update_entry,
+    log_wiki_action,
+)
 from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
@@ -10,7 +14,6 @@ from database import init_db, get_db
 from models import WikiEntry, WikiEntryLog
 
 app = typer.Typer()
-
 
 
 @app.command()
@@ -35,15 +38,15 @@ def get_wiki(title: str):
                 db=db,
                 title=title,
                 wiki_entry_id=entry.id,
-                action_type='check',
+                action_type="check",
                 cache_hit=True,
                 needed_update=False,
-                was_updated=False
+                was_updated=False,
             )
         else:
             # Fetch from Wikipedia API
             content = asyncio.run(get_wikipedia_entry(title))
-            
+
             if entry:
                 # Update existing entry
                 entry.content = content
@@ -53,10 +56,10 @@ def get_wiki(title: str):
                     db=db,
                     title=title,
                     wiki_entry_id=entry.id,
-                    action_type='update',
+                    action_type="update",
                     cache_hit=False,
                     needed_update=True,
-                    was_updated=True
+                    was_updated=True,
                 )
             else:
                 # Create new entry
@@ -68,12 +71,12 @@ def get_wiki(title: str):
                     db=db,
                     title=title,
                     wiki_entry_id=entry.id,
-                    action_type='create',
+                    action_type="create",
                     cache_hit=False,
                     needed_update=True,
-                    was_updated=True
+                    was_updated=True,
                 )
-            
+
             db.commit()
 
         # Format and display the content
@@ -126,20 +129,20 @@ def get_wiki_related(title: str):
     try:
         db = next(get_db())
         result = asyncio.run(get_related_wikipedia_entries(title))
-        
+
         # Store and display main article
         should_update, main_entry = should_update_entry(db, title)
-        
+
         if not should_update and main_entry:
             rprint(f"[yellow]Main article '{title}' retrieved from cache.[/yellow]")
             log_wiki_action(
                 db=db,
                 title=title,
                 wiki_entry_id=main_entry.id,
-                action_type='check',
+                action_type="check",
                 cache_hit=True,
                 needed_update=False,
-                was_updated=False
+                was_updated=False,
             )
         else:
             if main_entry:
@@ -150,10 +153,10 @@ def get_wiki_related(title: str):
                     db=db,
                     title=title,
                     wiki_entry_id=main_entry.id,
-                    action_type='update',
+                    action_type="update",
                     cache_hit=False,
                     needed_update=True,
-                    was_updated=True
+                    was_updated=True,
                 )
             else:
                 main_entry = WikiEntry(title=title, content=result["main_article"])
@@ -164,44 +167,59 @@ def get_wiki_related(title: str):
                     db=db,
                     title=title,
                     wiki_entry_id=main_entry.id,
-                    action_type='create',
+                    action_type="create",
                     cache_hit=False,
                     needed_update=True,
-                    was_updated=True
+                    was_updated=True,
                 )
             db.commit()
 
         main_text = Text(result["main_article"], justify="left")
-        main_panel = Panel(main_text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
+        main_panel = Panel(
+            main_text, title=f"Wikipedia: {title}", width=100, padding=(1, 2)
+        )
         rprint(main_panel)
-        
+
         # Store and display related articles
         if result["related_articles"]:
             rprint("\n[blue]Related Articles:[/blue]")
             for article in result["related_articles"]:
-                should_update, related_entry = should_update_entry(db, article['title'])
-                
+                should_update, related_entry = should_update_entry(db, article["title"])
+
                 if not should_update and related_entry:
-                    rprint(f"[yellow]Related article '{article['title']}' retrieved from cache.[/yellow]")
+                    rprint(
+                        f"[yellow]Related article '{article['title']}' retrieved from cache.[/yellow]"
+                    )
                 else:
                     if related_entry:
-                        related_entry.content = article['content']
+                        related_entry.content = article["content"]
                         related_entry.created_at = datetime.utcnow()
-                        rprint(f"[green]Related article '{article['title']}' updated in database.[/green]")
+                        rprint(
+                            f"[green]Related article '{article['title']}' updated in database.[/green]"
+                        )
                     else:
-                        related_entry = WikiEntry(title=article['title'], content=article['content'])
+                        related_entry = WikiEntry(
+                            title=article["title"], content=article["content"]
+                        )
                         db.add(related_entry)
-                        rprint(f"[green]Related article '{article['title']}' stored in database.[/green]")
+                        rprint(
+                            f"[green]Related article '{article['title']}' stored in database.[/green]"
+                        )
                     db.commit()
 
                 # Display article preview
                 rprint(f"\n[green]• {article['title']}[/green]")
                 text = Text(article["content"][:500] + "...", justify="left")
-                panel = Panel(text, title=f"Wikipedia: {article['title']}", width=100, padding=(1, 2))
+                panel = Panel(
+                    text,
+                    title=f"Wikipedia: {article['title']}",
+                    width=100,
+                    padding=(1, 2),
+                )
                 rprint(panel)
         else:
             rprint("\n[yellow]No related articles found.[/yellow]")
-            
+
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
     finally:
@@ -216,12 +234,12 @@ def view_logs(title: str | None = None, limit: int = 20):
     try:
         db = next(get_db())
         query = db.query(WikiEntryLog).order_by(WikiEntryLog.action_time.desc())
-        
+
         if title:
             query = query.filter(WikiEntryLog.title == title)
-        
+
         logs = query.limit(limit).all()
-        
+
         if not logs:
             rprint("[yellow]No logs found.[/yellow]")
             return
@@ -242,14 +260,14 @@ def view_logs(title: str | None = None, limit: int = 20):
 
 @app.command()
 def show_logs(
-    title: str | None = None, 
-    limit: int = 20, 
+    title: str | None = None,
+    limit: int = 20,
     format: str = "detailed",
-    action_type: str | None = None
+    action_type: str | None = None,
 ):
     """
     Show detailed logs with the most recent entries first.
-    
+
     Args:
         title: Optional filter by article title
         limit: Number of logs to show (default: 20)
@@ -259,27 +277,35 @@ def show_logs(
     try:
         db = next(get_db())
         query = db.query(WikiEntryLog).order_by(WikiEntryLog.action_time.desc())
-        
+
         # Apply filters
         if title:
             query = query.filter(WikiEntryLog.title == title)
         if action_type:
             query = query.filter(WikiEntryLog.action_type == action_type)
-        
+
         logs = query.limit(limit).all()
-        
+
         if not logs:
             rprint("[yellow]No logs found.[/yellow]")
             return
 
         rprint(f"[blue]Article Action Logs[/blue] (showing {len(logs)} entries)")
-        
+
         if format == "detailed":
             for log in logs:
                 action_time = log.action_time.strftime("%Y-%m-%d %H:%M:%S")
-                cache_status = "[green]Cache Hit[/green]" if log.cache_hit else "[red]Cache Miss[/red]"
-                update_status = "[green]Updated[/green]" if log.was_updated else "[yellow]No Update[/yellow]"
-                
+                cache_status = (
+                    "[green]Cache Hit[/green]"
+                    if log.cache_hit
+                    else "[red]Cache Miss[/red]"
+                )
+                update_status = (
+                    "[green]Updated[/green]"
+                    if log.was_updated
+                    else "[yellow]No Update[/yellow]"
+                )
+
                 rprint("─" * 80)
                 rprint(f"[bold blue]{log.title}[/bold blue]")
                 rprint(f"Time: {action_time}")
@@ -291,7 +317,9 @@ def show_logs(
             for log in logs:
                 action_time = log.action_time.strftime("%Y-%m-%d %H:%M")
                 status = "🟢" if log.cache_hit else "🔄" if log.was_updated else "⚪"
-                rprint(f"{status} {action_time} | [cyan]{log.action_type:^7}[/cyan] | {log.title}")
+                rprint(
+                    f"{status} {action_time} | [cyan]{log.action_type:^7}[/cyan] | {log.title}"
+                )
 
         # Show summary
         rprint("\n[blue]Summary:[/blue]")
@@ -312,7 +340,7 @@ def show_logs(
 def refresh_all(force: bool = False):
     """
     Refresh all Wikipedia entries in the database.
-    
+
     Args:
         force: If True, updates all entries regardless of age. If False, only updates entries older than a week.
     """
@@ -325,55 +353,57 @@ def refresh_all(force: bool = False):
     try:
         db = next(get_db())
         entries = db.query(WikiEntry).all()
-        
+
         if not entries:
             rprint("[yellow]No entries found in database to refresh.[/yellow]")
             return
-        
+
         rprint(f"[blue]Starting refresh of {len(entries)} articles...[/blue]")
-        
+
         updated_count = 0
         skipped_count = 0
         error_count = 0
-        
+
         for entry in entries:
             try:
                 should_update, _ = should_update_entry(db, entry.title)
-                
+
                 if not force and not should_update:
-                    rprint(f"[yellow]Skipping '{entry.title}' - not old enough to update[/yellow]")
+                    rprint(
+                        f"[yellow]Skipping '{entry.title}' - not old enough to update[/yellow]"
+                    )
                     skipped_count += 1
                     continue
-                
+
                 rprint(f"[cyan]Updating '{entry.title}'...[/cyan]")
-                
+
                 # Fetch new content
                 content = asyncio.run(get_wikipedia_entry(entry.title))
-                
+
                 # Update entry
                 entry.content = content
                 entry.created_at = datetime.utcnow()
-                
+
                 # Log the update
                 log_wiki_action(
                     db=db,
                     title=entry.title,
                     wiki_entry_id=entry.id,
-                    action_type='update',
+                    action_type="update",
                     cache_hit=False,
                     needed_update=True,
-                    was_updated=True
+                    was_updated=True,
                 )
-                
+
                 db.commit()
                 updated_count += 1
                 rprint(f"[green]Successfully updated '{entry.title}'[/green]")
-                
+
             except Exception as e:
                 error_count += 1
                 rprint(f"[red]Error updating '{entry.title}': {str(e)}[/red]")
                 continue
-        
+
         # Print summary
         rprint("\n[blue]Refresh Summary:[/blue]")
         rprint(f"Total entries: {len(entries)}")
@@ -381,7 +411,7 @@ def refresh_all(force: bool = False):
         rprint(f"Skipped: [yellow]{skipped_count}[/yellow]")
         if error_count:
             rprint(f"Errors: [red]{error_count}[/red]")
-            
+
     except Exception as e:
         rprint(f"[red]Error during refresh:[/red] {str(e)}")
     finally:
