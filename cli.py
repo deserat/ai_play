@@ -83,6 +83,37 @@ def list_entries():
         db.close()
 
 
+@app.command()
+def get_wiki_related(title: str):
+    """
+    Fetch a Wikipedia article and all articles listed in its "See Also" section.
+    
+    Args:
+        title: The title of the Wikipedia article to fetch
+    """
+    try:
+        result = asyncio.run(get_related_wikipedia_entries(title))
+        
+        # Display main article
+        main_text = Text(result["main_article"], justify="left")
+        main_panel = Panel(main_text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
+        rprint(main_panel)
+        
+        # Display related articles
+        if result["related_articles"]:
+            rprint("\n[blue]Related Articles:[/blue]")
+            for article in result["related_articles"]:
+                rprint(f"\n[green]• {article['title']}[/green]")
+                text = Text(article["content"][:500] + "...", justify="left")
+                panel = Panel(text, title=f"Wikipedia: {article['title']}", width=100, padding=(1, 2))
+                rprint(panel)
+        else:
+            rprint("\n[yellow]No related articles found.[/yellow]")
+            
+    except Exception as e:
+        rprint(f"[red]Error:[/red] {str(e)}")
+
+
 if __name__ == "__main__":
     init()  # Initialize database tables
     app()
