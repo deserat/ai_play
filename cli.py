@@ -15,9 +15,10 @@ def hello(name: str):
 
 
 @app.command()
-def wiki(title: str):
+def get_wiki(title: str):
     """
-    Fetch and display a Wikipedia article.
+    Fetch a Wikipedia article and store it in the database.
+    If the article exists in the database, it will be retrieved from there.
 
     Args:
         title: The title of the Wikipedia article to fetch
@@ -28,8 +29,14 @@ def wiki(title: str):
 
         # Format and display the content
         text = Text(content, justify="left")
-        panel = Panel(text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
+        panel = Panel(
+            text,
+            title=f"Wikipedia: {title}",
+            width=100,
+            padding=(1, 2)
+        )
         rprint(panel)
+        rprint("[green]Article successfully stored in database.[/green]")
 
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
