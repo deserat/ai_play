@@ -1,20 +1,22 @@
 import aiohttp
 import json
 from config import Settings
+from models import WikiEntry
+from database import get_db
+from datetime import datetime
 
 async def get_wikipedia_entry(title: str) -> str:
     """
-    Fetch a Wikipedia article asynchronously by its title.
-    
-    Args:
-        title (str): The title of the Wikipedia article
-        
-    Returns:
-        str: The article content text
-        
-    Raises:
-        Exception: If the API request fails or article is not found
+    Fetch a Wikipedia article asynchronously by its title and cache it in the database.
     """
+    # First try to get from database
+    db = next(get_db())
+    cached_entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
+    
+    if cached_entry:
+        return cached_entry.content
+
+    # If not in database, fetch from Wikipedia
     settings = Settings()
     params = {
         "action": "query",
@@ -37,6 +39,18 @@ async def get_wikipedia_entry(title: str) -> str:
                 page = data["query"]["pages"][0]
                 if "missing" in page:
                     raise Exception(f"Wikipedia article '{title}' not found")
-                return page["extract"]
+                content = page["extract"]
+                
+                # Store in database
+                wiki_entry = WikiEntry(
+                    title=title,
+                    content=content
+                )
+                db.add(wiki_entry)
+                db.commit()
+                
+                return content
             except (KeyError, IndexError):
                 raise Exception("Failed to parse Wikipedia API response")
+            finally:
+                db.close()

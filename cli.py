@@ -36,5 +36,11 @@ def wiki(title: str):
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
 
+from database import init_db
+
+def init():
+    init_db()
+
 if __name__ == "__main__":
+    init()  # Initialize database tables
     app()
