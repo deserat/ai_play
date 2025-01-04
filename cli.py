@@ -239,6 +239,74 @@ def view_logs(title: str | None = None, limit: int = 20):
         db.close()
 
 
+@app.command()
+def show_logs(
+    title: str | None = None, 
+    limit: int = 20, 
+    format: str = "detailed",
+    action_type: str | None = None
+):
+    """
+    Show detailed logs with the most recent entries first.
+    
+    Args:
+        title: Optional filter by article title
+        limit: Number of logs to show (default: 20)
+        format: Output format ('detailed' or 'compact')
+        action_type: Filter by action type ('check', 'update', 'create')
+    """
+    try:
+        db = next(get_db())
+        query = db.query(WikiEntryLog).order_by(WikiEntryLog.action_time.desc())
+        
+        # Apply filters
+        if title:
+            query = query.filter(WikiEntryLog.title == title)
+        if action_type:
+            query = query.filter(WikiEntryLog.action_type == action_type)
+        
+        logs = query.limit(limit).all()
+        
+        if not logs:
+            rprint("[yellow]No logs found.[/yellow]")
+            return
+
+        rprint(f"[blue]Article Action Logs[/blue] (showing {len(logs)} entries)")
+        
+        if format == "detailed":
+            for log in logs:
+                action_time = log.action_time.strftime("%Y-%m-%d %H:%M:%S")
+                cache_status = "[green]Cache Hit[/green]" if log.cache_hit else "[red]Cache Miss[/red]"
+                update_status = "[green]Updated[/green]" if log.was_updated else "[yellow]No Update[/yellow]"
+                
+                rprint("─" * 80)
+                rprint(f"[bold blue]{log.title}[/bold blue]")
+                rprint(f"Time: {action_time}")
+                rprint(f"Action: [cyan]{log.action_type.upper()}[/cyan]")
+                rprint(f"Cache Status: {cache_status}")
+                rprint(f"Update Status: {update_status}")
+                rprint(f"Needed Update: {'Yes' if log.needed_update else 'No'}")
+        else:  # compact format
+            for log in logs:
+                action_time = log.action_time.strftime("%Y-%m-%d %H:%M")
+                status = "🟢" if log.cache_hit else "🔄" if log.was_updated else "⚪"
+                rprint(f"{status} {action_time} | [cyan]{log.action_type:^7}[/cyan] | {log.title}")
+
+        # Show summary
+        rprint("\n[blue]Summary:[/blue]")
+        total = len(logs)
+        cache_hits = sum(1 for log in logs if log.cache_hit)
+        updates = sum(1 for log in logs if log.was_updated)
+        rprint(f"Total Entries: {total}")
+        rprint(f"Cache Hits: {cache_hits} ({cache_hits/total*100:.1f}%)")
+        rprint(f"Updates: {updates} ({updates/total*100:.1f}%)")
+
+    except Exception as e:
+        rprint(f"[red]Error viewing logs:[/red] {str(e)}")
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     init()  # Initialize database tables
     app()
