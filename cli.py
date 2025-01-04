@@ -1,7 +1,6 @@
 import typer
 import asyncio
-from datetime import datetime, timedelta
-from lib import get_wikipedia_entry, get_related_wikipedia_entries
+from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry
 from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
@@ -10,24 +9,6 @@ from models import WikiEntry
 
 app = typer.Typer()
 
-
-def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
-    """
-    Check if a wiki entry exists and needs updating (older than 1 week).
-    
-    Args:
-        db: Database session
-        title: Title of the Wikipedia article
-        
-    Returns:
-        tuple: (should_update: bool, entry: WikiEntry | None)
-    """
-    entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
-    if not entry:
-        return True, None
-        
-    week_ago = datetime.utcnow() - timedelta(days=7)
-    return entry.created_at < week_ago, entry
 
 
 @app.command()

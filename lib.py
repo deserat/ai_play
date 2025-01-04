@@ -1,7 +1,9 @@
 import aiohttp
 import asyncio
 import re
+from datetime import datetime, timedelta
 from config import Settings
+from models import WikiEntry
 
 
 async def get_wikipedia_entry(title: str) -> str:
@@ -103,3 +105,22 @@ async def get_related_wikipedia_entries(title: str) -> dict:
         "main_article": main_content,
         "related_articles": related_articles
     }
+
+
+def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
+    """
+    Check if a wiki entry exists and needs updating (older than 1 week).
+    
+    Args:
+        db: Database session
+        title: Title of the Wikipedia article
+        
+    Returns:
+        tuple: (should_update: bool, entry: WikiEntry | None)
+    """
+    entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
+    if not entry:
+        return True, None
+        
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    return entry.created_at < week_ago, entry
