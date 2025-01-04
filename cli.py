@@ -1,6 +1,6 @@
 import typer
 import asyncio
-from lib import get_wikipedia_entry
+from lib import get_wikipedia_entry, get_related_wikipedia_entries
 from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
