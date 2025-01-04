@@ -1,5 +1,6 @@
 import typer
 import asyncio
+from datetime import datetime
 from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry
 from rich import print as rprint
 from rich.panel import Panel
