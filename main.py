@@ -20,7 +20,7 @@ class EntryListResponse(BaseModel):
         from_attributes = True
 
 
-class WikiEntryDetail(BaseModel):
+class EntryDetailResponse(BaseModel):
     id: int
     title: str
     content: str
@@ -60,7 +60,7 @@ def list_wiki_entries(db: Session = Depends(get_db)):
     return entries
 
 
-@app.get("/wiki-entries/{entry_id}", response_model=WikiEntryDetail)
+@app.get("/wiki-entries/{entry_id}", response_model=EntryDetailResponse)
 def get_wiki_entry(entry_id: int, db: Session = Depends(get_db)):
     """
     Get a specific Wikipedia entry by its ID.
