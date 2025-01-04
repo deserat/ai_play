@@ -1,5 +1,6 @@
 import aiohttp
 import json
+from config import Settings
 
 async def get_wikipedia_entry(title: str) -> str:
     """
@@ -14,7 +15,7 @@ async def get_wikipedia_entry(title: str) -> str:
     Raises:
         Exception: If the API request fails or article is not found
     """
-    base_url = "https://en.wikipedia.org/w/api.php"
+    settings = Settings()
     params = {
         "action": "query",
         "format": "json",
@@ -25,7 +26,7 @@ async def get_wikipedia_entry(title: str) -> str:
     }
     
     async with aiohttp.ClientSession() as session:
-        async with session.get(base_url, params=params) as response:
+        async with session.get(settings.wikipedia_base_url, params=params) as response:
             if response.status != 200:
                 raise Exception(f"Wikipedia API request failed with status {response.status}")
             
