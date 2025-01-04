@@ -14,8 +14,6 @@ settings = Settings()
 class WikiEntryResponse(BaseModel):
     id: int
     title: str
-    content: str
-    created_at: datetime
     modified_at: datetime
 
     class Config:
@@ -39,8 +37,11 @@ def read_item(item_id: int, q: Union[str, None] = None):
 def list_wiki_entries(db: Session = Depends(get_db)):
     """
     Get all Wikipedia entries stored in the database.
+    Returns only id, title and last modified date.
     """
     entries = (
-        db.query(models.WikiEntry).order_by(models.WikiEntry.created_at.desc()).all()
+        db.query(models.WikiEntry.id, models.WikiEntry.title, models.WikiEntry.modified_at)
+        .order_by(models.WikiEntry.modified_at.desc())
+        .all()
     )
     return entries
