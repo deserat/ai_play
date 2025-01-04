@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from wikicli.config import Settings
-from wikicli.models import Base
+from config import Settings
+from wiki_tools.models import Base
 
 settings = Settings()
 

@@ -1,3 +1,8 @@
+import sys
+import pathlib
+
+sys.path.append(pathlib.Path().resolve())
+
 import typer
 import asyncio
 from datetime import datetime
@@ -5,9 +10,9 @@ from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
 
-from wikicli.database import init_db, get_db
-from wikicli.models import WikiEntry, WikiEntryLog
-from wikicli.lib import (
+from wiki_tools.database import init_db, get_db
+from wiki_tools.models import WikiEntry, WikiEntryLog
+from wiki_tools.lib import (
     get_wikipedia_entry,
     get_related_wikipedia_entries,
     should_update_entry,
