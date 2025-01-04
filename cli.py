@@ -1,6 +1,7 @@
 import typer
 import asyncio
 from datetime import datetime
+from typing import Optional
 from lib import get_wikipedia_entry, get_related_wikipedia_entries, should_update_entry, log_wiki_action
 from rich import print as rprint
 from rich.panel import Panel
@@ -246,6 +247,139 @@ def show_logs(
     format: str = "detailed",
     action_type: str | None = None
 ):
+    """
+    Show detailed logs with the most recent entries first.
+    
+    Args:
+        title: Optional filter by article title
+        limit: Number of logs to show (default: 20)
+        format: Output format ('detailed' or 'compact')
+        action_type: Filter by action type ('check', 'update', 'create')
+    """
+    try:
+        db = next(get_db())
+        query = db.query(WikiEntryLog).order_by(WikiEntryLog.action_time.desc())
+        
+        # Apply filters
+        if title:
+            query = query.filter(WikiEntryLog.title == title)
+        if action_type:
+            query = query.filter(WikiEntryLog.action_type == action_type)
+        
+        logs = query.limit(limit).all()
+        
+        if not logs:
+            rprint("[yellow]No logs found.[/yellow]")
+            return
+
+        rprint(f"[blue]Article Action Logs[/blue] (showing {len(logs)} entries)")
+        
+        if format == "detailed":
+            for log in logs:
+                action_time = log.action_time.strftime("%Y-%m-%d %H:%M:%S")
+                cache_status = "[green]Cache Hit[/green]" if log.cache_hit else "[red]Cache Miss[/red]"
+                update_status = "[green]Updated[/green]" if log.was_updated else "[yellow]No Update[/yellow]"
+                
+                rprint("─" * 80)
+                rprint(f"[bold blue]{log.title}[/bold blue]")
+                rprint(f"Time: {action_time}")
+                rprint(f"Action: [cyan]{log.action_type.upper()}[/cyan]")
+                rprint(f"Cache Status: {cache_status}")
+                rprint(f"Update Status: {update_status}")
+                rprint(f"Needed Update: {'Yes' if log.needed_update else 'No'}")
+        else:  # compact format
+            for log in logs:
+                action_time = log.action_time.strftime("%Y-%m-%d %H:%M")
+                status = "🟢" if log.cache_hit else "🔄" if log.was_updated else "⚪"
+                rprint(f"{status} {action_time} | [cyan]{log.action_type:^7}[/cyan] | {log.title}")
+
+        # Show summary
+        rprint("\n[blue]Summary:[/blue]")
+        total = len(logs)
+        cache_hits = sum(1 for log in logs if log.cache_hit)
+        updates = sum(1 for log in logs if log.was_updated)
+        rprint(f"Total Entries: {total}")
+        rprint(f"Cache Hits: {cache_hits} ({cache_hits/total*100:.1f}%)")
+        rprint(f"Updates: {updates} ({updates/total*100:.1f}%)")
+
+    except Exception as e:
+        rprint(f"[red]Error viewing logs:[/red] {str(e)}")
+    finally:
+        db.close()
+
+
+@app.command()
+def refresh_all(force: bool = False):
+    """
+    Refresh all Wikipedia entries in the database.
+    
+    Args:
+        force: If True, updates all entries regardless of age. If False, only updates entries older than a week.
+    """
+    try:
+        db = next(get_db())
+        entries = db.query(WikiEntry).all()
+        
+        if not entries:
+            rprint("[yellow]No entries found in database to refresh.[/yellow]")
+            return
+        
+        rprint(f"[blue]Starting refresh of {len(entries)} articles...[/blue]")
+        
+        updated_count = 0
+        skipped_count = 0
+        error_count = 0
+        
+        for entry in entries:
+            try:
+                should_update, _ = should_update_entry(db, entry.title)
+                
+                if not force and not should_update:
+                    rprint(f"[yellow]Skipping '{entry.title}' - not old enough to update[/yellow]")
+                    skipped_count += 1
+                    continue
+                
+                rprint(f"[cyan]Updating '{entry.title}'...[/cyan]")
+                
+                # Fetch new content
+                content = asyncio.run(get_wikipedia_entry(entry.title))
+                
+                # Update entry
+                entry.content = content
+                entry.created_at = datetime.utcnow()
+                
+                # Log the update
+                log_wiki_action(
+                    db=db,
+                    title=entry.title,
+                    wiki_entry_id=entry.id,
+                    action_type='update',
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True
+                )
+                
+                db.commit()
+                updated_count += 1
+                rprint(f"[green]Successfully updated '{entry.title}'[/green]")
+                
+            except Exception as e:
+                error_count += 1
+                rprint(f"[red]Error updating '{entry.title}': {str(e)}[/red]")
+                continue
+        
+        # Print summary
+        rprint("\n[blue]Refresh Summary:[/blue]")
+        rprint(f"Total entries: {len(entries)}")
+        rprint(f"Updated: [green]{updated_count}[/green]")
+        rprint(f"Skipped: [yellow]{skipped_count}[/yellow]")
+        if error_count:
+            rprint(f"Errors: [red]{error_count}[/red]")
+            
+    except Exception as e:
+        rprint(f"[red]Error during refresh:[/red] {str(e)}")
+    finally:
+        db.close()
     """
     Show detailed logs with the most recent entries first.
     
