@@ -157,3 +157,52 @@ def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
         
     week_ago = datetime.utcnow() - timedelta(days=7)
     return entry.created_at < week_ago, entry
+
+
+def wiki_to_markdown(wiki_text: str) -> str:
+    """
+    Convert Wikipedia text format to Markdown.
+    
+    Args:
+        wiki_text: String containing Wikipedia formatted text
+        
+    Returns:
+        String formatted as Markdown
+    """
+    # Initialize converted text
+    md_text = wiki_text
+    
+    # Handle section headers
+    # === Level 2 headers ===
+    md_text = re.sub(r'==\s*([^=]+?)\s*==', r'## \1', md_text)
+    # === Level 3 headers ===
+    md_text = re.sub(r'===\s*([^=]+?)\s*===', r'### \1', md_text)
+    # === Level 4 headers ===
+    md_text = re.sub(r'====\s*([^=]+?)\s*====', r'#### \1', md_text)
+    
+    # Handle lists
+    # Bullet points
+    md_text = re.sub(r'^\*\s*(.+)$', r'* \1', md_text, flags=re.MULTILINE)
+    # Numbered lists
+    md_text = re.sub(r'^\#\s*(.+)$', r'1. \1', md_text, flags=re.MULTILINE)
+    
+    # Handle basic formatting
+    # Bold
+    md_text = re.sub(r"'''(.+?)'''", r'**\1**', md_text)
+    # Italic
+    md_text = re.sub(r"''(.+?)''", r'*\1*', md_text)
+    
+    # Handle links
+    # Internal links with display text: [[target|display]]
+    md_text = re.sub(r'\[\[([^|\]]+?)\|([^\]]+?)\]\]', r'[\2](\1)', md_text)
+    # Internal links without display text: [[target]]
+    md_text = re.sub(r'\[\[([^\]]+?)\]\]', r'[\1](\1)', md_text)
+    # External links with display text: [url display]
+    md_text = re.sub(r'\[(\S+?)\s+([^\]]+?)\]', r'[\2](\1)', md_text)
+    # External links without display text: [url]
+    md_text = re.sub(r'\[(\S+?)\]', r'[\1](\1)', md_text)
+    
+    # Clean up extra newlines
+    md_text = re.sub(r'\n{3,}', '\n\n', md_text)
+    
+    return md_text.strip()
