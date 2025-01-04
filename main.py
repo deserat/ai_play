@@ -6,10 +6,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 
-from . import models
-from .config import Settings
-from .database import get_db
-from .lib import wiki_to_markdown
+from wikicli import models
+from wikicli.config import Settings
+from wikicli.database import get_db
+from wikicli.lib import wiki_to_markdown
 
 settings = Settings()
 

@@ -3,8 +3,8 @@ import asyncio
 import re
 from datetime import datetime, timedelta
 
-from .config import Settings
-from .models import WikiEntry, WikiEntryLog
+from wikicli.config import Settings
+from wikicli.models import WikiEntry, WikiEntryLog
 
 
 def log_wiki_action(

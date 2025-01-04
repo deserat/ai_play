@@ -5,9 +5,9 @@ from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
 
-from .database import init_db, get_db
-from .models import WikiEntry, WikiEntryLog
-from .lib import (
+from wikicli.database import init_db, get_db
+from wikicli.models import WikiEntry, WikiEntryLog
+from wikicli.lib import (
     get_wikipedia_entry,
     get_related_wikipedia_entries,
     should_update_entry,
