@@ -4,7 +4,8 @@ from lib import get_wikipedia_entry
 from rich import print as rprint
 from rich.panel import Panel
 from rich.text import Text
-from database import init_db
+from database import init_db, get_db
+from models import WikiEntry
 
 app = typer.Typer()
 
@@ -49,3 +50,28 @@ def init():
 if __name__ == "__main__":
     init()  # Initialize database tables
     app()
+
+@app.command()
+def list_entries():
+    """
+    List all Wikipedia articles stored in the local database.
+    """
+    try:
+        db = next(get_db())
+        entries = db.query(WikiEntry).order_by(WikiEntry.created_at.desc()).all()
+        
+        if not entries:
+            rprint("[yellow]No Wikipedia articles found in the database.[/yellow]")
+            return
+
+        rprint("[blue]Stored Wikipedia Articles:[/blue]")
+        for entry in entries:
+            created_at = entry.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            rprint(f"[green]• {entry.title}[/green] (stored on {created_at})")
+        
+        rprint(f"\nTotal entries: {len(entries)}")
+
+    except Exception as e:
+        rprint(f"[red]Error listing entries:[/red] {str(e)}")
+    finally:
+        db.close()
