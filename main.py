@@ -1,6 +1,6 @@
 from typing import Union, List
 from datetime import datetime
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -14,6 +14,17 @@ settings = Settings()
 class EntryListResponse(BaseModel):
     id: int
     title: str
+    modified_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class WikiEntryDetail(BaseModel):
+    id: int
+    title: str
+    content: str
+    created_at: datetime
     modified_at: datetime
 
     class Config:
@@ -47,3 +58,15 @@ def list_wiki_entries(db: Session = Depends(get_db)):
         .all()
     )
     return entries
+
+
+@app.get("/wiki-entries/{entry_id}", response_model=WikiEntryDetail)
+def get_wiki_entry(entry_id: int, db: Session = Depends(get_db)):
+    """
+    Get a specific Wikipedia entry by its ID.
+    Returns the complete entry including content.
+    """
+    entry = db.query(models.WikiEntry).filter(models.WikiEntry.id == entry_id).first()
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return entry
