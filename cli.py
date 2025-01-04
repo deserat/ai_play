@@ -190,6 +190,15 @@ def get_wiki_related(title: str):
                     rprint(
                         f"[yellow]Related article '{article['title']}' retrieved from cache.[/yellow]"
                     )
+                    log_wiki_action(
+                        db=db,
+                        title=article['title'],
+                        wiki_entry_id=related_entry.id,
+                        action_type="check",
+                        cache_hit=True,
+                        needed_update=False,
+                        was_updated=False,
+                    )
                 else:
                     if related_entry:
                         related_entry.content = article["content"]
@@ -197,13 +206,32 @@ def get_wiki_related(title: str):
                         rprint(
                             f"[green]Related article '{article['title']}' updated in database.[/green]"
                         )
+                        log_wiki_action(
+                            db=db,
+                            title=article['title'],
+                            wiki_entry_id=related_entry.id,
+                            action_type="update",
+                            cache_hit=False,
+                            needed_update=True,
+                            was_updated=True,
+                        )
                     else:
                         related_entry = WikiEntry(
                             title=article["title"], content=article["content"]
                         )
                         db.add(related_entry)
+                        db.commit()  # Commit to get the entry.id
                         rprint(
                             f"[green]Related article '{article['title']}' stored in database.[/green]"
+                        )
+                        log_wiki_action(
+                            db=db,
+                            title=article['title'],
+                            wiki_entry_id=related_entry.id,
+                            action_type="create",
+                            cache_hit=False,
+                            needed_update=True,
+                            was_updated=True,
                         )
                     db.commit()
 
