@@ -1,4 +1,5 @@
 from typing import Union, List
+from datetime import datetime
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -14,8 +15,8 @@ class WikiEntryResponse(BaseModel):
     id: int
     title: str
     content: str
-    created_at: str
-    modified_at: str
+    created_at: datetime
+    modified_at: datetime
 
     class Config:
         from_attributes = True
