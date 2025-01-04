@@ -21,8 +21,8 @@ async def get_wikipedia_entry(title: str) -> str:
         "format": "json",
         "titles": title,
         "prop": "extracts",
-        "explaintext": True,  # Get plain text instead of HTML
-        "formatversion": 2
+        "explaintext": "1",  # Use "1" instead of True for the API
+        "formatversion": "2"  # Also convert this to string
     }
     
     async with aiohttp.ClientSession() as session:
