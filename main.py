@@ -1,13 +1,15 @@
-from typing import Union, List
 from datetime import datetime
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from .lib import wiki_to_markdown
+from typing import Union, List
 
-from .config import Settings
+from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+
 from . import models
+from .config import Settings
 from .database import get_db
+from .lib import wiki_to_markdown
 
 settings = Settings()
 
@@ -70,13 +72,13 @@ def get_wiki_entry(entry_id: int, db: Session = Depends(get_db)):
     entry = db.query(models.WikiEntry).filter(models.WikiEntry.id == entry_id).first()
     if entry is None:
         raise HTTPException(status_code=404, detail="Entry not found")
-    
+
     # Create a copy of the entry to avoid modifying the database object
     response = EntryDetailResponse(
         id=entry.id,
         title=entry.title,
         content=wiki_to_markdown(entry.content),  # Convert to markdown
         created_at=entry.created_at,
-        modified_at=entry.modified_at
+        modified_at=entry.modified_at,
     )
     return response

@@ -1,17 +1,18 @@
 import typer
 import asyncio
 from datetime import datetime
-from lib import (
+from rich import print as rprint
+from rich.panel import Panel
+from rich.text import Text
+
+from .database import init_db, get_db
+from .models import WikiEntry, WikiEntryLog
+from .lib import (
     get_wikipedia_entry,
     get_related_wikipedia_entries,
     should_update_entry,
     log_wiki_action,
 )
-from rich import print as rprint
-from rich.panel import Panel
-from rich.text import Text
-from database import init_db, get_db
-from models import WikiEntry, WikiEntryLog
 
 app = typer.Typer()
 
@@ -192,7 +193,7 @@ def get_wiki_related(title: str):
                     )
                     log_wiki_action(
                         db=db,
-                        title=article['title'],
+                        title=article["title"],
                         wiki_entry_id=related_entry.id,
                         action_type="check",
                         cache_hit=True,
@@ -208,7 +209,7 @@ def get_wiki_related(title: str):
                         )
                         log_wiki_action(
                             db=db,
-                            title=article['title'],
+                            title=article["title"],
                             wiki_entry_id=related_entry.id,
                             action_type="update",
                             cache_hit=False,
@@ -226,7 +227,7 @@ def get_wiki_related(title: str):
                         )
                         log_wiki_action(
                             db=db,
-                            title=article['title'],
+                            title=article["title"],
                             wiki_entry_id=related_entry.id,
                             action_type="create",
                             cache_hit=False,
