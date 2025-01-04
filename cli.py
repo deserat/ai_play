@@ -30,12 +30,7 @@ def get_wiki(title: str):
 
         # Format and display the content
         text = Text(content, justify="left")
-        panel = Panel(
-            text,
-            title=f"Wikipedia: {title}",
-            width=100,
-            padding=(1, 2)
-        )
+        panel = Panel(text, title=f"Wikipedia: {title}", width=100, padding=(1, 2))
         rprint(panel)
         rprint("[green]Article successfully stored in database.[/green]")
 
@@ -47,10 +42,6 @@ def init():
     init_db()
 
 
-if __name__ == "__main__":
-    init()  # Initialize database tables
-    app()
-
 @app.command()
 def list_entries():
     """
@@ -59,7 +50,7 @@ def list_entries():
     try:
         db = next(get_db())
         entries = db.query(WikiEntry).order_by(WikiEntry.created_at.desc()).all()
-        
+
         if not entries:
             rprint("[yellow]No Wikipedia articles found in the database.[/yellow]")
             return
@@ -68,10 +59,15 @@ def list_entries():
         for entry in entries:
             created_at = entry.created_at.strftime("%Y-%m-%d %H:%M:%S")
             rprint(f"[green]• {entry.title}[/green] (stored on {created_at})")
-        
+
         rprint(f"\nTotal entries: {len(entries)}")
 
     except Exception as e:
         rprint(f"[red]Error listing entries:[/red] {str(e)}")
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    init()  # Initialize database tables
+    app()
