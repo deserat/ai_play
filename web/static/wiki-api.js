@@ -1,6 +1,13 @@
 class WikiAPI {
     constructor(baseUrl = 'http://localhost:8000') {
         this.baseUrl = baseUrl;
+        // Configure marked options
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            sanitize: false
+        });
     }
 
     /**
@@ -36,6 +43,8 @@ class WikiAPI {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const entry = await response.json();
+            // Convert markdown content to HTML
+            entry.content = marked.parse(entry.content);
             return entry;
         } catch (error) {
             console.error(`Error fetching wiki entry ${id}:`, error);

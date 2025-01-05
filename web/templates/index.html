@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Wiki Entries</title>
+    <!-- Add marked library -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/static/wiki-api.js"></script>
     <style>
         .entry-list {
@@ -19,6 +21,24 @@
             margin: 20px;
             padding: 20px;
             border: 1px solid #ddd;
+        }
+        /* Add styles for markdown content */
+        .markdown-content {
+            line-height: 1.6;
+        }
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        .markdown-content p {
+            margin: 1em 0;
+        }
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 1em 0;
+            padding-left: 2em;
         }
     </style>
 </head>
@@ -51,7 +71,7 @@
                 const entry = await api.getEntry(id);
                 detailDiv.innerHTML = `
                     <h2>${entry.title}</h2>
-                    <div>${entry.content}</div>
+                    <div class="markdown-content">${entry.content}</div>
                     <div class="meta">
                         Created: ${new Date(entry.created_at).toLocaleString()}<br>
                         Modified: ${new Date(entry.modified_at).toLocaleString()}
