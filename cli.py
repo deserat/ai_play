@@ -12,6 +12,7 @@ from rich.text import Text
 
 from wiki_tools.database import init_db, get_db
 from wiki_tools.models import WikiEntry, WikiEntryLog
+import wiki_tools.lib
 from wiki_tools.lib import (
     get_wikipedia_entry,
     get_related_wikipedia_entries,
