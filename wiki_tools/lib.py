@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import re
+import html
 from datetime import datetime, timedelta
 
 from config import Settings
@@ -231,7 +232,7 @@ def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
 
 async def get_wikipedia_list(list_title: str) -> list[str]:
     """
-    Fetch a Wikipedia list page and extract the list items.
+    Fetch a Wikipedia list page and extract items from both lists and tables.
     
     Args:
         list_title: Title of the Wikipedia list page (e.g. "List of Nobel laureates")
@@ -245,61 +246,86 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
     if not list_title.lower().startswith("list of"):
         list_title = f"List of {list_title}"
 
-    params = {
-        "action": "query",
+    # First try to get the HTML content for tables
+    params_html = {
+        "action": "parse",
         "format": "json",
-        "titles": list_title,
-        "prop": "extracts",
-        "explaintext": "1",
+        "page": list_title,
+        "prop": "text",
         "formatversion": "2",
     }
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(settings.wikipedia_base_url, params=params) as response:
+        async with session.get(settings.wikipedia_base_url, params=params_html) as response:
             if response.status != 200:
                 raise Exception(f"Wikipedia API request failed with status {response.status}")
 
             data = await response.json()
-
+            
             try:
-                page = data["query"]["pages"][0]
-                if "missing" in page:
-                    raise Exception(f"Wikipedia list '{list_title}' not found")
-                
-                content = page["extract"]
-                
-                # Extract list items using various patterns
+                # Extract items from both tables and lists
                 items = []
                 
-                # Pattern 1: Lines starting with asterisk, dash, bullet, or other list markers
-                items.extend(re.findall(r'^\s*(?:[\*\-•⁕◾▪]|\(\d+\)|\d+\.|\w\)|\d+\))\s*([^\n]+)', content, re.MULTILINE))
+                if 'parse' in data and 'text' in data['parse']:
+                    html_content = data['parse']['text']
+                    
+                    # Extract table rows
+                    # Look for common table cell patterns in Wikipedia tables
+                    table_patterns = [
+                        r'<td[^>]*>([^<]+)</td>',  # Basic table cells
+                        r'<td[^>]*><a[^>]*>([^<]+)</a></td>',  # Linked items in cells
+                        r'<th[^>]*>([^<]+)</th>'  # Table headers (sometimes contain relevant items)
+                    ]
+                    
+                    for pattern in table_patterns:
+                        matches = re.findall(pattern, html_content)
+                        items.extend(matches)
                 
-                # Pattern 2: Lines after a numbered prefix
-                items.extend(re.findall(r'^\s*\d+\.\s+([^\n]+)', content, re.MULTILINE))
+                # Also get the plain text content for lists
+                params_text = {
+                    "action": "query",
+                    "format": "json",
+                    "titles": list_title,
+                    "prop": "extracts",
+                    "explaintext": "1",
+                    "formatversion": "2",
+                }
                 
-                # Pattern 3: Items in sections between headers
-                sections = re.split(r'={2,}[^=]+={2,}', content)
-                for section in sections:
-                    # Look for lines that likely contain list items
-                    lines = section.split('\n')
-                    for line in lines:
-                        line = line.strip()
-                        # Skip empty lines and lines that look like headers or references
-                        if (line and 
-                            not line.startswith('=') and 
-                            not line.startswith('^') and 
-                            not line.startswith('See also') and
-                            not line.startswith('References') and
-                            len(line) > 10):  # Minimum length to avoid fragments
-                            items.append(line)
+                async with session.get(settings.wikipedia_base_url, params=params_text) as text_response:
+                    if text_response.status == 200:
+                        text_data = await text_response.json()
+                        if 'query' in text_data and 'pages' in text_data['query']:
+                            content = text_data['query']['pages'][0].get('extract', '')
+                            
+                            # Extract list items using previous patterns
+                            items.extend(re.findall(r'^\s*(?:[\*\-•⁕◾▪]|\(\d+\)|\d+\.|\w\)|\d+\))\s*([^\n]+)', content, re.MULTILINE))
+                            items.extend(re.findall(r'^\s*\d+\.\s+([^\n]+)', content, re.MULTILINE))
+                            
+                            # Extract items from sections
+                            sections = re.split(r'={2,}[^=]+={2,}', content)
+                            for section in sections:
+                                lines = section.split('\n')
+                                for line in lines:
+                                    line = line.strip()
+                                    if (line and 
+                                        not line.startswith('=') and 
+                                        not line.startswith('^') and 
+                                        not line.startswith('See also') and
+                                        not line.startswith('References') and
+                                        len(line) > 10):
+                                        items.append(line)
                 
                 # Clean up items
                 cleaned_items = []
                 for item in items:
+                    # Convert HTML entities
+                    item = html.unescape(item)
                     # Remove citations [1], [citation needed], etc.
                     item = re.sub(r'\[[^\]]*\]', '', item)
                     # Remove parenthetical information
                     item = re.sub(r'\([^)]*\)', '', item)
+                    # Remove any remaining HTML tags
+                    item = re.sub(r'<[^>]+>', '', item)
                     # Remove any remaining special characters
                     item = re.sub(r'["""]', '', item)
                     # Clean up whitespace and punctuation
@@ -312,7 +338,7 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
                 unique_items = list(dict.fromkeys(cleaned_items))
                 
                 if not unique_items:
-                    raise Exception("No list items found in the Wikipedia page. Try a different list title.")
+                    raise Exception("No items found in the Wikipedia page. Try a different list title.")
                 
                 return unique_items
 
