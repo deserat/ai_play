@@ -5,7 +5,10 @@ sys.path.append("..")
 from datetime import datetime
 from typing import Union, List
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -39,16 +42,22 @@ class EntryDetailResponse(BaseModel):
 
 
 app = FastAPI()
+templates = Jinja2Templates(directory="web/templates")
+app.mount("/static/", StaticFiles(directory="web/static"))
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Specify your allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+def index(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 @app.get("/wiki-entries/", response_model=List[EntryListResponse])
