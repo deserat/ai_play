@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Union, List
 
 from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from typing import Dict, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,7 +18,7 @@ from sqlalchemy.orm import Session
 from config import Settings
 from wiki_tools import models
 from wiki_tools.database import get_db
-from wiki_tools.lib import wiki_to_markdown
+from wiki_tools.lib import wiki_to_markdown, get_wiki
 
 settings = Settings()
 
@@ -95,3 +97,26 @@ def get_wiki_entry(entry_id: int, db: Session = Depends(get_db)):
         modified_at=entry.modified_at,
     )
     return response
+
+
+@app.post("/wiki-entries/fetch/", response_model=Dict[str, Union[str, str]])
+def fetch_wiki_entry(title: str, db: Session = Depends(get_db)):
+    """
+    Fetch a Wikipedia article by title, store it in the database, and return it.
+    If the article exists in the database and is less than a week old, it will be retrieved from there.
+    
+    Args:
+        title: Title of the Wikipedia article to fetch
+        db: Database session (injected by FastAPI)
+    
+    Returns:
+        Dict containing the article content and status message
+    """
+    try:
+        content, status = get_wiki(db, title)
+        return {
+            "content": content,
+            "status": status
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
