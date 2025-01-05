@@ -19,7 +19,6 @@ from wiki_tools.lib import (
     should_update_entry,
     log_wiki_action,
     get_wiki,
-    get_wikipedia_list,
 )
 
 app = typer.Typer()
@@ -31,7 +30,7 @@ def hello(name: str):
 
 
 @app.command()
-def get_wiki(title: str):
+def get_wiki_entry(title: str):
     """
     Fetch a Wikipedia article and store it in the database.
     If the article exists in the database and is less than a week old, it will be retrieved from there.
@@ -39,7 +38,7 @@ def get_wiki(title: str):
     try:
         db = next(get_db())
         content, status = asyncio.run(wiki_tools.lib.get_wiki(db, title))
-        
+
         rprint(f"[yellow]{status}[/yellow]")
 
         # Format and display the content
@@ -325,8 +324,6 @@ def show_logs(
         rprint(f"[red]Error viewing logs:[/red] {str(e)}")
     finally:
         db.close()
-
-
 
 
 @app.command()
