@@ -7,6 +7,75 @@ from config import Settings
 from wiki_tools.models import WikiEntry, WikiEntryLog
 
 
+def get_wiki(db, title: str) -> tuple[str, str]:
+    """
+    Fetch a Wikipedia article and store it in the database.
+    If the article exists in the database and is less than a week old, it will be retrieved from there.
+    
+    Args:
+        db: Database session
+        title: Title of the Wikipedia article
+        
+    Returns:
+        tuple: (content: str, status_message: str)
+    """
+    try:
+        should_update, entry = should_update_entry(db, title)
+
+        if not should_update and entry:
+            content = entry.content
+            status = "Retrieved from database cache."
+            log_wiki_action(
+                db=db,
+                title=title,
+                wiki_entry_id=entry.id,
+                action_type="check",
+                cache_hit=True,
+                needed_update=False,
+                was_updated=False,
+            )
+        else:
+            # Fetch from Wikipedia API
+            content = asyncio.run(get_wikipedia_entry(title))
+
+            if entry:
+                # Update existing entry
+                entry.content = content
+                entry.created_at = datetime.utcnow()
+                status = "Article successfully updated in database."
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=entry.id,
+                    action_type="update",
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True,
+                )
+            else:
+                # Create new entry
+                entry = WikiEntry(title=title, content=content)
+                db.add(entry)
+                db.commit()  # Commit to get the entry.id
+                status = "Article successfully stored in database."
+                log_wiki_action(
+                    db=db,
+                    title=title,
+                    wiki_entry_id=entry.id,
+                    action_type="create",
+                    cache_hit=False,
+                    needed_update=True,
+                    was_updated=True,
+                )
+
+            db.commit()
+
+        return content, status
+
+    except Exception as e:
+        raise Exception(f"Error getting wiki entry: {str(e)}")
+
+
 def log_wiki_action(
     db,
     title: str,

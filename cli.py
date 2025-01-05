@@ -17,6 +17,7 @@ from wiki_tools.lib import (
     get_related_wikipedia_entries,
     should_update_entry,
     log_wiki_action,
+    get_wiki,
 )
 
 app = typer.Typer()
@@ -35,55 +36,9 @@ def get_wiki(title: str):
     """
     try:
         db = next(get_db())
-        should_update, entry = should_update_entry(db, title)
-
-        if not should_update and entry:
-            content = entry.content
-            rprint("[yellow]Retrieved from database cache.[/yellow]")
-            log_wiki_action(
-                db=db,
-                title=title,
-                wiki_entry_id=entry.id,
-                action_type="check",
-                cache_hit=True,
-                needed_update=False,
-                was_updated=False,
-            )
-        else:
-            # Fetch from Wikipedia API
-            content = asyncio.run(get_wikipedia_entry(title))
-
-            if entry:
-                # Update existing entry
-                entry.content = content
-                entry.created_at = datetime.utcnow()
-                rprint("[green]Article successfully updated in database.[/green]")
-                log_wiki_action(
-                    db=db,
-                    title=title,
-                    wiki_entry_id=entry.id,
-                    action_type="update",
-                    cache_hit=False,
-                    needed_update=True,
-                    was_updated=True,
-                )
-            else:
-                # Create new entry
-                entry = WikiEntry(title=title, content=content)
-                db.add(entry)
-                db.commit()  # Commit to get the entry.id
-                rprint("[green]Article successfully stored in database.[/green]")
-                log_wiki_action(
-                    db=db,
-                    title=title,
-                    wiki_entry_id=entry.id,
-                    action_type="create",
-                    cache_hit=False,
-                    needed_update=True,
-                    was_updated=True,
-                )
-
-            db.commit()
+        content, status = wiki_tools.lib.get_wiki(db, title)
+        
+        rprint(f"[yellow]{status}[/yellow]")
 
         # Format and display the content
         text = Text(content, justify="left")
