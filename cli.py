@@ -37,7 +37,7 @@ def get_wiki(title: str):
     """
     try:
         db = next(get_db())
-        content, status = wiki_tools.lib.get_wiki(db, title)
+        content, status = asyncio.run(wiki_tools.lib.get_wiki(db, title))
         
         rprint(f"[yellow]{status}[/yellow]")
 

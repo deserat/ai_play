@@ -7,7 +7,7 @@ from config import Settings
 from wiki_tools.models import WikiEntry, WikiEntryLog
 
 
-def get_wiki(db, title: str) -> tuple[str, str]:
+async def get_wiki(db, title: str) -> tuple[str, str]:
     """
     Fetch a Wikipedia article and store it in the database.
     If the article exists in the database and is less than a week old, it will be retrieved from there.
@@ -35,8 +35,8 @@ def get_wiki(db, title: str) -> tuple[str, str]:
                 was_updated=False,
             )
         else:
-            # Fetch from Wikipedia API
-            content = asyncio.run(get_wikipedia_entry(title))
+            # Fetch from Wikipedia API (now directly async)
+            content = await get_wikipedia_entry(title)
 
             if entry:
                 # Update existing entry

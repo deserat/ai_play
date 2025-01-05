@@ -100,7 +100,7 @@ def get_wiki_entry(entry_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/wiki-entries/fetch/", response_model=Dict[str, Union[str, str]])
-def fetch_wiki_entry(title: str, db: Session = Depends(get_db)):
+async def fetch_wiki_entry(title: str, db: Session = Depends(get_db)):
     """
     Fetch a Wikipedia article by title, store it in the database, and return it.
     If the article exists in the database and is less than a week old, it will be retrieved from there.
@@ -113,7 +113,7 @@ def fetch_wiki_entry(title: str, db: Session = Depends(get_db)):
         Dict containing the article content and status message
     """
     try:
-        content, status = get_wiki(db, title)
+        content, status = await get_wiki(db, title)
         return {
             "content": content,
             "status": status
