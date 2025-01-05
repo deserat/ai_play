@@ -337,6 +337,17 @@ def get_list(title: str, format: str = "bullet"):
         format: Output format ('bullet', 'numbered', or 'plain')
     """
     try:
+        # Clean up the title
+        title = title.strip()
+        if not title:
+            raise ValueError("Title cannot be empty")
+
+        # Add "List of" prefix if needed and the title doesn't already have it
+        if not title.lower().startswith("list of"):
+            title = f"List of {title}"
+
+        rprint(f"\n[yellow]Fetching list: {title}...[/yellow]")
+        
         items = asyncio.run(get_wikipedia_list(title))
         
         rprint(f"\n[blue]Items from Wikipedia list: {title}[/blue]")
@@ -351,8 +362,13 @@ def get_list(title: str, format: str = "bullet"):
             else:  # plain format
                 rprint(f"[green]{item}[/green]")
 
+    except ValueError as ve:
+        rprint(f"[red]Error:[/red] {str(ve)}")
     except Exception as e:
         rprint(f"[red]Error:[/red] {str(e)}")
+        if "debug" in format:  # Add debug option
+            import traceback
+            rprint(f"[red]Debug traceback:[/red]\n{traceback.format_exc()}")
 
 
 @app.command()
