@@ -271,32 +271,48 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
                 # Extract list items using various patterns
                 items = []
                 
-                # Pattern 1: Lines starting with asterisk or dash
-                items.extend(re.findall(r'^\s*[\*\-]\s*([^\n]+)', content, re.MULTILINE))
+                # Pattern 1: Lines starting with asterisk, dash, bullet, or other list markers
+                items.extend(re.findall(r'^\s*(?:[\*\-•⁕◾▪]|\(\d+\)|\d+\.|\w\)|\d+\))\s*([^\n]+)', content, re.MULTILINE))
                 
-                # Pattern 2: Lines starting with numbers or letters followed by dot/parenthesis
-                items.extend(re.findall(r'^\s*(?:\d+\.|\d+\)|\w\.|\w\))\s*([^\n]+)', content, re.MULTILINE))
+                # Pattern 2: Lines after a numbered prefix
+                items.extend(re.findall(r'^\s*\d+\.\s+([^\n]+)', content, re.MULTILINE))
                 
-                # Pattern 3: Items in bullet-like format with dash
-                items.extend(re.findall(r'^\s*–\s*([^\n]+)', content, re.MULTILINE))
+                # Pattern 3: Items in sections between headers
+                sections = re.split(r'={2,}[^=]+={2,}', content)
+                for section in sections:
+                    # Look for lines that likely contain list items
+                    lines = section.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        # Skip empty lines and lines that look like headers or references
+                        if (line and 
+                            not line.startswith('=') and 
+                            not line.startswith('^') and 
+                            not line.startswith('See also') and
+                            not line.startswith('References') and
+                            len(line) > 10):  # Minimum length to avoid fragments
+                            items.append(line)
                 
                 # Clean up items
                 cleaned_items = []
                 for item in items:
                     # Remove citations [1], [citation needed], etc.
                     item = re.sub(r'\[[^\]]*\]', '', item)
-                    # Remove parenthetical dates and clarifications
+                    # Remove parenthetical information
                     item = re.sub(r'\([^)]*\)', '', item)
-                    # Clean up whitespace
-                    item = item.strip()
-                    if item and len(item) > 1:  # Only keep non-empty items
+                    # Remove any remaining special characters
+                    item = re.sub(r'["""]', '', item)
+                    # Clean up whitespace and punctuation
+                    item = item.strip('.,;: \t\n\r')
+                    # Skip if too short or empty after cleaning
+                    if item and len(item) > 5:
                         cleaned_items.append(item)
                 
                 # Remove duplicates while preserving order
                 unique_items = list(dict.fromkeys(cleaned_items))
                 
                 if not unique_items:
-                    raise Exception("No list items found in the Wikipedia page")
+                    raise Exception("No list items found in the Wikipedia page. Try a different list title.")
                 
                 return unique_items
 
