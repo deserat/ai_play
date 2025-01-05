@@ -19,6 +19,7 @@ from wiki_tools.lib import (
     should_update_entry,
     log_wiki_action,
     get_wiki,
+    get_wikipedia_list,
 )
 
 app = typer.Typer()
@@ -324,6 +325,34 @@ def show_logs(
         rprint(f"[red]Error viewing logs:[/red] {str(e)}")
     finally:
         db.close()
+
+
+@app.command()
+def get_list(title: str, format: str = "bullet"):
+    """
+    Fetch and display a list from a Wikipedia list article.
+
+    Args:
+        title: Title of the Wikipedia list article (with or without 'List of' prefix)
+        format: Output format ('bullet', 'numbered', or 'plain')
+    """
+    try:
+        items = asyncio.run(get_wikipedia_list(title))
+        
+        rprint(f"\n[blue]Items from Wikipedia list: {title}[/blue]")
+        rprint(f"[yellow]Found {len(items)} items[/yellow]\n")
+
+        # Display items in the specified format
+        for i, item in enumerate(items, 1):
+            if format == "bullet":
+                rprint(f"[green]• {item}[/green]")
+            elif format == "numbered":
+                rprint(f"[green]{i}. {item}[/green]")
+            else:  # plain format
+                rprint(f"[green]{item}[/green]")
+
+    except Exception as e:
+        rprint(f"[red]Error:[/red] {str(e)}")
 
 
 @app.command()
