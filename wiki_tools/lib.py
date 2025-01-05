@@ -229,6 +229,81 @@ def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
     return entry.created_at < week_ago, entry
 
 
+async def get_wikipedia_list(list_title: str) -> list[str]:
+    """
+    Fetch a Wikipedia list page and extract the list items.
+    
+    Args:
+        list_title: Title of the Wikipedia list page (e.g. "List of Nobel laureates")
+        
+    Returns:
+        list[str]: List of items extracted from the Wikipedia page
+    """
+    settings = Settings()
+    
+    # Ensure the title starts with "List of" if it doesn't already
+    if not list_title.lower().startswith("list of"):
+        list_title = f"List of {list_title}"
+
+    params = {
+        "action": "query",
+        "format": "json",
+        "titles": list_title,
+        "prop": "extracts",
+        "explaintext": "1",
+        "formatversion": "2",
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(settings.wikipedia_base_url, params=params) as response:
+            if response.status != 200:
+                raise Exception(f"Wikipedia API request failed with status {response.status}")
+
+            data = await response.json()
+
+            try:
+                page = data["query"]["pages"][0]
+                if "missing" in page:
+                    raise Exception(f"Wikipedia list '{list_title}' not found")
+                
+                content = page["extract"]
+                
+                # Extract list items using various patterns
+                items = []
+                
+                # Pattern 1: Lines starting with asterisk or dash
+                items.extend(re.findall(r'^\s*[\*\-]\s*([^\n]+)', content, re.MULTILINE))
+                
+                # Pattern 2: Lines starting with numbers or letters followed by dot/parenthesis
+                items.extend(re.findall(r'^\s*(?:\d+\.|\d+\)|\w\.|\w\))\s*([^\n]+)', content, re.MULTILINE))
+                
+                # Pattern 3: Items in bullet-like format with dash
+                items.extend(re.findall(r'^\s*–\s*([^\n]+)', content, re.MULTILINE))
+                
+                # Clean up items
+                cleaned_items = []
+                for item in items:
+                    # Remove citations [1], [citation needed], etc.
+                    item = re.sub(r'\[[^\]]*\]', '', item)
+                    # Remove parenthetical dates and clarifications
+                    item = re.sub(r'\([^)]*\)', '', item)
+                    # Clean up whitespace
+                    item = item.strip()
+                    if item and len(item) > 1:  # Only keep non-empty items
+                        cleaned_items.append(item)
+                
+                # Remove duplicates while preserving order
+                unique_items = list(dict.fromkeys(cleaned_items))
+                
+                if not unique_items:
+                    raise Exception("No list items found in the Wikipedia page")
+                
+                return unique_items
+
+            except Exception as e:
+                raise Exception(f"Failed to parse Wikipedia list: {str(e)}")
+
+
 def wiki_to_markdown(wiki_text: str) -> str:
     """
     Convert Wikipedia text format to Markdown.
