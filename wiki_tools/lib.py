@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import re
 import html
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 from config import Settings
@@ -263,25 +264,54 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
             data = await response.json()
             
             try:
-                # Extract items from both tables and lists
                 items = []
                 
                 if 'parse' in data and 'text' in data['parse']:
                     html_content = data['parse']['text']
+                    soup = BeautifulSoup(html_content, 'html.parser')
                     
-                    # Extract table rows
-                    # Look for common table cell patterns in Wikipedia tables
-                    table_patterns = [
-                        r'<td[^>]*>([^<]+)</td>',  # Basic table cells
-                        r'<td[^>]*><a[^>]*>([^<]+)</a></td>',  # Linked items in cells
-                        r'<th[^>]*>([^<]+)</th>'  # Table headers (sometimes contain relevant items)
-                    ]
+                    # Extract items from tables
+                    for table in soup.find_all('table', class_='wikitable'):
+                        # Process table headers
+                        headers = []
+                        for th in table.find_all('th'):
+                            text = th.get_text(strip=True)
+                            if text and len(text) > 1:  # Skip single-character headers
+                                headers.append(text)
+                        
+                        # Process table rows
+                        for tr in table.find_all('tr'):
+                            for td in tr.find_all('td'):
+                                # Try to get text from links first
+                                links = td.find_all('a')
+                                if links:
+                                    for link in links:
+                                        text = link.get_text(strip=True)
+                                        if text and len(text) > 1:
+                                            items.append(text)
+                                else:
+                                    # If no links, get the cell text
+                                    text = td.get_text(strip=True)
+                                    if text and len(text) > 1:
+                                        items.append(text)
                     
-                    for pattern in table_patterns:
-                        matches = re.findall(pattern, html_content)
-                        items.extend(matches)
+                    # Extract items from lists
+                    for list_elem in soup.find_all(['ul', 'ol']):
+                        for li in list_elem.find_all('li'):
+                            # Try to get text from links first
+                            links = li.find_all('a')
+                            if links:
+                                for link in links:
+                                    text = link.get_text(strip=True)
+                                    if text and len(text) > 1:
+                                        items.append(text)
+                            else:
+                                # If no links, get the list item text
+                                text = li.get_text(strip=True)
+                                if text and len(text) > 1:
+                                    items.append(text)
                 
-                # Also get the plain text content for lists
+                # Also get the plain text content for additional context
                 params_text = {
                     "action": "query",
                     "format": "json",
@@ -297,11 +327,7 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
                         if 'query' in text_data and 'pages' in text_data['query']:
                             content = text_data['query']['pages'][0].get('extract', '')
                             
-                            # Extract list items using previous patterns
-                            items.extend(re.findall(r'^\s*(?:[\*\-•⁕◾▪]|\(\d+\)|\d+\.|\w\)|\d+\))\s*([^\n]+)', content, re.MULTILINE))
-                            items.extend(re.findall(r'^\s*\d+\.\s+([^\n]+)', content, re.MULTILINE))
-                            
-                            # Extract items from sections
+                            # Extract items from sections that might contain relevant information
                             sections = re.split(r'={2,}[^=]+={2,}', content)
                             for section in sections:
                                 lines = section.split('\n')
@@ -324,10 +350,6 @@ async def get_wikipedia_list(list_title: str) -> list[str]:
                     item = re.sub(r'\[[^\]]*\]', '', item)
                     # Remove parenthetical information
                     item = re.sub(r'\([^)]*\)', '', item)
-                    # Remove any remaining HTML tags
-                    item = re.sub(r'<[^>]+>', '', item)
-                    # Remove any remaining special characters
-                    item = re.sub(r'["""]', '', item)
                     # Clean up whitespace and punctuation
                     item = item.strip('.,;: \t\n\r')
                     # Skip if too short or empty after cleaning
