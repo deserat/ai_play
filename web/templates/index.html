@@ -6,6 +6,45 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/static/wiki-api.js"></script>
     <style>
+        /* Add form styles */
+        .fetch-form {
+            margin: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .fetch-form input[type="text"] {
+            padding: 8px;
+            margin-right: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .fetch-form button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .fetch-form button:hover {
+            background-color: #0056b3;
+        }
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        /* Existing styles remain the same */
         .entry-list {
             margin: 20px;
         }
@@ -22,7 +61,6 @@
             padding: 20px;
             border: 1px solid #ddd;
         }
-        /* Add styles for markdown content */
         .markdown-content {
             line-height: 1.6;
         }
@@ -43,11 +81,57 @@
     </style>
 </head>
 <body>
+    <!-- Add the new form -->
+    <div class="fetch-form">
+        <form id="fetchForm" onsubmit="fetchWikiArticle(event)">
+            <input type="text" id="articleTitle" placeholder="Enter Wikipedia article title" required>
+            <button type="submit">Fetch Article</button>
+        </form>
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+
     <div id="entries" class="entry-list"></div>
     <div id="entry-detail" class="entry-content"></div>
 
     <script>
         const api = new WikiAPI();
+
+        // Add the new fetch function
+        async function fetchWikiArticle(event) {
+            event.preventDefault();
+            const titleInput = document.getElementById('articleTitle');
+            const statusDiv = document.getElementById('statusMessage');
+            const title = titleInput.value.trim();
+
+            try {
+                statusDiv.innerHTML = 'Fetching article...';
+                statusDiv.className = 'status-message';
+                
+                const response = await fetch(`/wiki-entries/fetch/?title=${encodeURIComponent(title)}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Show success message
+                statusDiv.innerHTML = result.status;
+                statusDiv.className = 'status-message status-success';
+                
+                // Clear the input
+                titleInput.value = '';
+                
+                // Reload the entries list to show the new entry
+                await loadEntries();
+                
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                statusDiv.className = 'status-message status-error';
+            }
+        }
 
         // Load and display entry list
         async function loadEntries() {
