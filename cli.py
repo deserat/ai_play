@@ -57,6 +57,28 @@ def init():
 
 
 @app.command()
+def db_upgrade():
+    """Run database migrations"""
+    from alembic.config import Config
+    from alembic import command
+    
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    rprint("[green]Database migrations completed successfully[/green]")
+
+
+@app.command()
+def db_downgrade():
+    """Downgrade database by one revision"""
+    from alembic.config import Config
+    from alembic import command
+    
+    alembic_cfg = Config("alembic.ini")
+    command.downgrade(alembic_cfg, "-1")
+    rprint("[yellow]Database downgraded by one revision[/yellow]")
+
+
+@app.command()
 def list_entries():
     """
     List all Wikipedia articles stored in the local database.
