@@ -1,0 +1,272 @@
+[
+  {
+    "id": 1,
+    "wiki_entry_id": 1,
+    "title": "New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:51",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 2,
+    "wiki_entry_id": 1,
+    "title": "New Mexico",
+    "action_type": "check",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": true,
+    "needed_update": false,
+    "was_updated": false
+  },
+  {
+    "id": 3,
+    "wiki_entry_id": 2,
+    "title": "Climate change in New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 4,
+    "wiki_entry_id": 3,
+    "title": "Economy of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 5,
+    "wiki_entry_id": 4,
+    "title": "Geology of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 6,
+    "wiki_entry_id": 5,
+    "title": "Government of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 7,
+    "wiki_entry_id": 6,
+    "title": "Governor of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 8,
+    "wiki_entry_id": 7,
+    "title": "List of counties in New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 9,
+    "wiki_entry_id": 8,
+    "title": "List of municipalities in New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 10,
+    "wiki_entry_id": 9,
+    "title": "History of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 11,
+    "wiki_entry_id": 10,
+    "title": "Timeline of New Mexico history",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 12,
+    "wiki_entry_id": 11,
+    "title": "Index of New Mexico-related articles",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 13,
+    "wiki_entry_id": 12,
+    "title": "List of mountain peaks of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 14,
+    "wiki_entry_id": 13,
+    "title": "List of rivers of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 15,
+    "wiki_entry_id": 14,
+    "title": "Outline of New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 16,
+    "wiki_entry_id": 15,
+    "title": "Paleontology in New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-04T23:50:59",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 17,
+    "wiki_entry_id": 1,
+    "title": "New Mexico",
+    "action_type": "check",
+    "action_time": "2025-01-05T00:20:04",
+    "cache_hit": true,
+    "needed_update": false,
+    "was_updated": false
+  },
+  {
+    "id": 18,
+    "wiki_entry_id": 1,
+    "title": "New Mexico",
+    "action_type": "check",
+    "action_time": "2025-01-05T00:24:41",
+    "cache_hit": true,
+    "needed_update": false,
+    "was_updated": false
+  },
+  {
+    "id": 19,
+    "wiki_entry_id": 16,
+    "title": "Rio Chama",
+    "action_type": "create",
+    "action_time": "2025-01-05T00:24:49",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 20,
+    "wiki_entry_id": 17,
+    "title": "Rio Grande",
+    "action_type": "create",
+    "action_time": "2025-01-05T00:27:35",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 21,
+    "wiki_entry_id": 18,
+    "title": "List of census-designated places in New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-05T00:28:52",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 22,
+    "wiki_entry_id": 18,
+    "title": "List of census-designated places in New Mexico",
+    "action_type": "check",
+    "action_time": "2025-01-05T00:31:11",
+    "cache_hit": true,
+    "needed_update": false,
+    "was_updated": false
+  },
+  {
+    "id": 23,
+    "wiki_entry_id": 19,
+    "title": "Abeytas, New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-05T00:32:03",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 24,
+    "wiki_entry_id": 20,
+    "title": "Agua Fria, New Mexico",
+    "action_type": "create",
+    "action_time": "2025-01-05T00:33:13",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 25,
+    "wiki_entry_id": 12,
+    "title": "List of mountain peaks of New Mexico",
+    "action_type": "check",
+    "action_time": "2025-01-05T01:01:46",
+    "cache_hit": true,
+    "needed_update": false,
+    "was_updated": false
+  },
+  {
+    "id": 26,
+    "wiki_entry_id": 21,
+    "title": "Gila River",
+    "action_type": "create",
+    "action_time": "2025-01-05T01:48:53",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  },
+  {
+    "id": 27,
+    "wiki_entry_id": 22,
+    "title": "Chaco River",
+    "action_type": "create",
+    "action_time": "2025-01-05T02:04:10",
+    "cache_hit": false,
+    "needed_update": true,
+    "was_updated": true
+  }
+]
