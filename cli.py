@@ -63,7 +63,7 @@ def db_upgrade():
     """Run database migrations"""
     from alembic.config import Config
     from alembic import command
-    
+
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
     rprint("[green]Database migrations completed successfully[/green]")
@@ -74,7 +74,7 @@ def db_downgrade():
     """Downgrade database by one revision"""
     from alembic.config import Config
     from alembic import command
-    
+
     alembic_cfg = Config("alembic.ini")
     command.downgrade(alembic_cfg, "-1")
     rprint("[yellow]Database downgraded by one revision[/yellow]")
@@ -436,20 +436,20 @@ def refresh_all(force: bool = False):
 def db_dump(output_dir: str = "db_dumps"):
     """
     Dump all database tables to JSON files.
-    
+
     Args:
         output_dir: Directory to store the dump files (default: db_dumps)
     """
     try:
         db = next(get_db())
-        
+
         # Create output directory if it doesn't exist
         dump_dir = Path(output_dir)
         dump_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate timestamp for the dump
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Dump WikiEntry table
         entries = db.query(WikiEntry).all()
         entries_data = [
@@ -458,14 +458,16 @@ def db_dump(output_dir: str = "db_dumps"):
                 "title": entry.title,
                 "content": entry.content,
                 "created_at": entry.created_at.isoformat(),
-                "modified_at": entry.modified_at.isoformat()
+                "modified_at": entry.modified_at.isoformat(),
             }
             for entry in entries
         ]
-        
-        with open(dump_dir / f"wiki_entries_{timestamp}.json", "w", encoding="utf-8") as f:
+
+        with open(
+            dump_dir / f"wiki_entries_{timestamp}.json", "w", encoding="utf-8"
+        ) as f:
             json.dump(entries_data, f, indent=2, ensure_ascii=False)
-            
+
         # Dump WikiEntryLog table
         logs = db.query(WikiEntryLog).all()
         logs_data = [
@@ -477,18 +479,20 @@ def db_dump(output_dir: str = "db_dumps"):
                 "action_time": log.action_time.isoformat(),
                 "cache_hit": log.cache_hit,
                 "needed_update": log.needed_update,
-                "was_updated": log.was_updated
+                "was_updated": log.was_updated,
             }
             for log in logs
         ]
-        
-        with open(dump_dir / f"wiki_entry_logs_{timestamp}.json", "w", encoding="utf-8") as f:
+
+        with open(
+            dump_dir / f"wiki_entry_logs_{timestamp}.json", "w", encoding="utf-8"
+        ) as f:
             json.dump(logs_data, f, indent=2, ensure_ascii=False)
-            
+
         rprint(f"[green]Database successfully dumped to {dump_dir}[/green]")
         rprint(f"Entries file: wiki_entries_{timestamp}.json")
         rprint(f"Logs file: wiki_entry_logs_{timestamp}.json")
-        
+
     except Exception as e:
         rprint(f"[red]Error dumping database:[/red] {str(e)}")
     finally:
@@ -499,7 +503,7 @@ def db_dump(output_dir: str = "db_dumps"):
 def db_restore(entries_file: str, logs_file: str, clear_existing: bool = True):
     """
     Restore database from JSON dump files.
-    
+
     Args:
         entries_file: Path to the wiki entries JSON file
         logs_file: Path to the wiki entry logs JSON file
@@ -507,34 +511,34 @@ def db_restore(entries_file: str, logs_file: str, clear_existing: bool = True):
     """
     try:
         db = next(get_db())
-        
+
         if clear_existing:
             rprint("[yellow]Clearing existing data...[/yellow]")
             db.query(WikiEntryLog).delete()
             db.query(WikiEntry).delete()
             db.commit()
-        
+
         # Restore WikiEntry records
         with open(entries_file, "r", encoding="utf-8") as f:
             entries_data = json.load(f)
-            
+
         for entry_data in entries_data:
             entry = WikiEntry(
                 id=entry_data["id"],
                 title=entry_data["title"],
                 content=entry_data["content"],
                 created_at=datetime.fromisoformat(entry_data["created_at"]),
-                modified_at=datetime.fromisoformat(entry_data["modified_at"])
+                modified_at=datetime.fromisoformat(entry_data["modified_at"]),
             )
             db.add(entry)
-        
+
         db.commit()
         rprint(f"[green]Restored {len(entries_data)} wiki entries[/green]")
-        
+
         # Restore WikiEntryLog records
         with open(logs_file, "r", encoding="utf-8") as f:
             logs_data = json.load(f)
-            
+
         for log_data in logs_data:
             log = WikiEntryLog(
                 id=log_data["id"],
@@ -544,13 +548,13 @@ def db_restore(entries_file: str, logs_file: str, clear_existing: bool = True):
                 action_time=datetime.fromisoformat(log_data["action_time"]),
                 cache_hit=log_data["cache_hit"],
                 needed_update=log_data["needed_update"],
-                was_updated=log_data["was_updated"]
+                was_updated=log_data["was_updated"],
             )
             db.add(log)
-        
+
         db.commit()
         rprint(f"[green]Restored {len(logs_data)} wiki entry logs[/green]")
-        
+
     except Exception as e:
         db.rollback()
         rprint(f"[red]Error restoring database:[/red] {str(e)}")
