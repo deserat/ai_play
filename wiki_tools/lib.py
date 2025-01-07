@@ -11,11 +11,11 @@ async def get_wiki(db, title: str) -> tuple[str, str]:
     """
     Fetch a Wikipedia article and store it in the database.
     If the article exists in the database and is less than a week old, it will be retrieved from there.
-    
+
     Args:
         db: Database session
         title: Title of the Wikipedia article
-        
+
     Returns:
         tuple: (content: str, status_message: str)
     """
@@ -225,10 +225,8 @@ def should_update_entry(db, title: str) -> tuple[bool, WikiEntry | None]:
     if not entry:
         return True, None
 
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_ago = datetime.utcnow() - timedelta(days=1)
     return entry.created_at < week_ago, entry
-
-
 
 
 def wiki_to_markdown(wiki_text: str) -> str:
