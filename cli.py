@@ -366,7 +366,8 @@ def refresh_all(force: bool = False):
     """
     try:
         db = next(get_db())
-        entries = db.query(WikiEntry).all()
+        # Only get titles initially
+        entries = db.query(WikiEntry.title).all()
 
         if not entries:
             rprint("[yellow]No entries found in database to refresh.[/yellow]")
@@ -378,36 +379,39 @@ def refresh_all(force: bool = False):
         skipped_count = 0
         error_count = 0
 
-        for entry in entries:
+        for entry_title in entries:
             try:
-                should_update, _ = should_update_entry(db, entry.title)
+                should_update, _ = should_update_entry(db, entry_title.title)
 
                 if not force and not should_update:
                     rprint(
-                        f"[yellow]Skipping '{entry.title}' - not old enough to update[/yellow]"
+                        f"[yellow]Skipping '{entry_title.title}' - not old enough to update[/yellow]"
                     )
                     skipped_count += 1
                     continue
 
-                rprint(f"[cyan]Updating '{entry.title}'...[/cyan]")
+                rprint(f"[cyan]Updating '{entry_title.title}'...[/cyan]")
 
                 # Fetch new content
-                content = asyncio.run(get_wikipedia_entry(entry.title))
+                content = asyncio.run(get_wikipedia_entry(entry_title.title))
 
-                # Update entry
-                entry.content = content
-                entry.created_at = datetime.utcnow()
+                # Get the entry to update
+                entry = db.query(WikiEntry).filter(WikiEntry.title == entry_title.title).first()
+                if entry:
+                    # Update entry
+                    entry.content = content
+                    entry.created_at = datetime.utcnow()
 
-                # Log the update
-                log_wiki_action(
-                    db=db,
-                    title=entry.title,
-                    wiki_entry_id=entry.id,
-                    action_type="update",
-                    cache_hit=False,
-                    needed_update=True,
-                    was_updated=True,
-                )
+                    # Log the update
+                    log_wiki_action(
+                        db=db,
+                        title=entry_title.title,
+                        wiki_entry_id=entry.id,
+                        action_type="update",
+                        cache_hit=False,
+                        needed_update=True,
+                        was_updated=True,
+                    )
 
                 db.commit()
                 updated_count += 1
