@@ -210,26 +210,26 @@ async def get_related_wikipedia_entries(title: str) -> dict:
     return {"main_article": main_content, "related_articles": related_articles}
 
 
-def should_update_entry(db, title: str, created_at: datetime | None = None) -> tuple[bool, WikiEntry | None]:
+def should_update_entry(db, title: str, modified_at: datetime | None = None) -> tuple[bool, WikiEntry | None]:
     """
     Check if a wiki entry exists and needs updating (older than 1 week).
 
     Args:
         db: Database session
         title: Title of the Wikipedia article
-        created_at: Optional creation timestamp to check against
+        modified_at: Optional modification timestamp to check against
 
     Returns:
         tuple: (should_update: bool, entry: WikiEntry | None)
     """
-    if created_at is None:
+    if modified_at is None:
         entry = db.query(WikiEntry).filter(WikiEntry.title == title).first()
         if not entry:
             return True, None
-        created_at = entry.created_at
+        modified_at = entry.modified_at
         
     week_ago = datetime.utcnow() - timedelta(days=1)
-    return created_at < week_ago, None
+    return modified_at < week_ago, None
 
 
 def wiki_to_markdown(wiki_text: str) -> str:
