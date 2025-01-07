@@ -366,8 +366,8 @@ def refresh_all(force: bool = False):
     """
     try:
         db = next(get_db())
-        # Only get titles initially
-        entries = db.query(WikiEntry.title).all()
+        # Get titles and created_at timestamps
+        entries = db.query(WikiEntry.title, WikiEntry.created_at).all()
 
         if not entries:
             rprint("[yellow]No entries found in database to refresh.[/yellow]")
@@ -381,7 +381,7 @@ def refresh_all(force: bool = False):
 
         for entry_title in entries:
             try:
-                should_update, _ = should_update_entry(db, entry_title.title)
+                should_update, _ = should_update_entry(db, entry_title.title, entry_title.created_at)
 
                 if not force and not should_update:
                     rprint(
