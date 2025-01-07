@@ -244,13 +244,13 @@ def wiki_to_markdown(wiki_text: str) -> str:
     # Initialize converted text
     md_text = wiki_text
 
-    # Handle section headers
-    # === Level 2 headers ===
-    md_text = re.sub(r"==\s*([^=]+?)\s*==", r"## \1", md_text)
+    # Handle section headers (from most specific to least specific)
+    # ==== Level 4 headers ====
+    md_text = re.sub(r"====\s*([^=]+?)\s*====", r"#### \1", md_text)
     # === Level 3 headers ===
     md_text = re.sub(r"===\s*([^=]+?)\s*===", r"### \1", md_text)
-    # === Level 4 headers ===
-    md_text = re.sub(r"====\s*([^=]+?)\s*====", r"#### \1", md_text)
+    # == Level 2 headers ==
+    md_text = re.sub(r"==\s*([^=]+?)\s*==", r"## \1", md_text)
 
     # Handle lists
     # Bullet points
